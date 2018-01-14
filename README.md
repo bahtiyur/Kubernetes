@@ -11,8 +11,8 @@ Procedure:
 
 2. AWS Cli Installation:
 apt-get install -y awscli;
-aws configure set aws_access_key_id AKIAJG4VCVUPCQLZSQ;
-aws configure set aws_secret_access_key Wzd/nWCym7B6pkNYR4;
+aws configure set aws_access_key_id YOURACCESSKEY;
+aws configure set aws_secret_access_key YOURSECRETKEY;
 aws configure set default.region ap-south-1;
 
 
@@ -26,28 +26,28 @@ mv kops-linux-amd64 /usr/local/bin/kops
 4. Kubectl Installation:
 #Reference URL: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 
-curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl;
-chmod +x ./kubectl;
-mv ./kubectl /usr/local/bin/kubectl;
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+mv ./kubectl /usr/local/bin/kubectl
 
 5. Kops uses an id_rsa.pub file to be used for the created instances which i have used as below:
 cp /home/ubuntu/.ssh/authorized_keys /root/.ssh/id_rsa.pub
 
 6. Export the variables for the Route53 hosted zone and the S3 bucket as below:
 export KOPS_STATE_STORE=s3://rvkubernetes.tk    #S3 bucket that we created in the step 1
-export DNS_ZONE_PUBLIC_ID=Z1A3BXE5N40766 		#Zone ID of the Route53 hosted zone
+export DNS_ZONE_PUBLIC_ID=HOSTEDZONEID 		#Zone ID of the Route53 hosted zone
 
 7. Create the cluster configuration as below:
 
-kops create cluster --zones=ap-south-1a rvkubernetes.tk
+kops create cluster --zones=ap-south-1a domain.com
 
 8. Cluster configuration has been created and stored in the s3 bucket. To edit the node/master instance type and the auto-scaling configuration, we need to edit the configurations with below commands
 
- * edit your node instance group with command: kops edit ig --name=rvkubernetes.tk nodes
- * edit your master instance group with command: kops edit ig --name=rvkubernetes.tk master-ap-south-1a
+ * edit your node instance group with command: kops edit ig --name=domain.com nodes
+ * edit your master instance group with command: kops edit ig --name=domain.com master-ap-south-1a
  
 9. After making the desired changes....apply the configuration to create the cluster with below command:
- kops update cluster rvkubernetes.tk --yes
+ kops update cluster domain.com --yes
  
 10. It will take 7-10 minutes to build the cluster post which we can use the below commands to verify the cluster status:
   * validate cluster with command: kops validate cluster 
@@ -79,5 +79,5 @@ https://api.$domain/api/v1/namespaces/kube-system/services/kubernetes-dashboard/
 
 As In our case:
 
-https://api.rvkubernetes.tk/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/#!/namespace?namespace=_all
+https://api.domain.com/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/#!/namespace?namespace=_all
 
