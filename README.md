@@ -2,8 +2,8 @@
 
 1. Kops 						: The utility used to install the kubernetes cluster
 2. Kubectl 						: The kubernetes command line tool used to manage the cluster
-3. Domain configured at Route53 : All the URL entries are created under this zone id which are also updated dynamically by the cluster.
-4. S3 Bucket				    : Used to store the Cluster configuration that is used by kops.
+3. Domain configured at Route53 			: All the URL entries are created under this zone id which are also 									updated dynamically by the cluster.
+4. S3 Bucket		       			        : Used to store the Cluster configuration that is used by kops.
 5. AWS Cli						
 
 Procedure:
