@@ -1,0 +1,76 @@
+##Youtube Link: https://www.youtube.com/watch?v=QeHtndq3RWU
+
+##### Kubernetes Cluster Auto-scaling #####
+
+#NOTE: Kubernetes auto-scaler scales based on the container workload means when there are pods scheduled to be deployed but they are failing reason being not enough resources available in worker nodes. Normal autoscaling by AWS can not do this on metrics available to the cluster, it can only do it on for example memory or cpu utilisation.
+
+#Reference URL: https://renzedevries.wordpress.com/2017/01/10/autoscaling-your-kubernetes-cluster-on-aws/
+
+#In order to apply autoscaling we need to deploy a specific deployment object and container that checks the Kubernetes Cluster for unscheduled workloads and if needed will trigger an AWS autoscale group. 
+
+1. There are two IAM roles , 1 for master and 1 for node, automatically created during the kubernetes cluster creation, we need to allow administrator access   to these roles in order to make the cluster auto-scaler work. We are mainly targeting the kubernetes nodes to scale and not the masters so, we need to
+   allow access to the nodes IAM role only.
+
+2. Deploy the cluster auto-scaler in the cluster.
+
+#NOTE: A sample deployment file is provided in the reference website which is to be deployed after few changes as below:
+
+1. Replace the MIN_SCALE and MAX_SCALE settings for the autoscaling and ensure the right autoscaling group (ASG_NAME) is set & the AWS region needs to be set
+	right. Please note that the minimum and maximum scaling rule need to be allowed in the AWS scaling group as the scaling process cannot modify the auto scaling group rule itself.
+   ----------------------------
+	- --nodes=MIN_SCALE:MAX_SCALE:ASG_NAME
+   env:
+	- name: AWS_REGION
+	---------------------------
+   
+After making the changes on the below sample file we can deploy this by the following command.
+   
+kubectl create -f autoscaler-filename.yaml
+
+##SAMPLE FILE##
+====================================================================================
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cluster-autoscaler
+  labels:
+    app: cluster-autoscaler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cluster-autoscaler
+  template:
+    metadata:
+      labels:
+        app: cluster-autoscaler
+    spec:
+      containers:
+        - image: gcr.io/google_containers/cluster-autoscaler:v0.4.0
+          name: cluster-autoscaler
+          resources:
+            limits:
+              cpu: 100m
+              memory: 300Mi
+            requests:
+              cpu: 100m
+              memory: 300Mi
+          command:
+            - ./cluster-autoscaler
+            - --v=4
+            - --cloud-provider=aws
+            - --skip-nodes-with-local-storage=false
+            - --nodes=MIN_SCALE:MAX_SCALE:ASG_NAME
+          env:
+            - name: AWS_REGION
+              value: us-east-1
+          volumeMounts:
+            - name: ssl-certs
+              mountPath: /etc/ssl/certs/ca-certificates.crt
+              readOnly: true
+          imagePullPolicy: "Always"
+      volumes:
+        - name: ssl-certs
+          hostPath:
+            path: "/etc/ssl/certs/ca-certificates.crt"
+===========================================================================================
