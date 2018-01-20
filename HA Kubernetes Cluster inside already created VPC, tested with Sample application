@@ -1,0 +1,125 @@
+#Kubernetes Installation pre-requisites:
+
+#Reference URL: http://kubecloud.io/setup-ha-k8s-kops/
+
+1. Kops 						: The utility used to install the kubernetes cluster
+2. Kubectl 						: The kubernetes command line tool used to manage the cluster
+3. Domain configured at Route53 : All the URL entries are created under this zone id which are also updated dynamically by the cluster.
+4. S3 Bucket				    : Used to store the Cluster configuration that is used by kops.
+5. AWS Cli						
+
+#The below command specifies:
+1. VPC id in which we want to create the cluster.
+2. Node count
+3. Master count (1 master will be created in each AZ).
+4. Availability zones in which the master/node instances will span.
+5. Route53 Hosted zone id
+6. Master/node instance types
+7. Subnets to be used.
+8. Volume size of the master/node instances.
+
+Procedure:
+1. Create a S3 bucket.
+
+2. AWS Cli Installation:
+apt-get install -y awscli;
+aws configure set aws_access_key_id YOURACCESSKEY;
+aws configure set aws_secret_access_key YOURSECRETKEY;
+aws configure set default.region ap-south-1;
+
+
+3. Kops Installation:
+#Reference URL: https://github.com/kubernetes/kops
+
+wget https://github.com/kubernetes/kops/releases/download/1.8.0/kops-linux-amd64
+chmod +x kops-linux-amd64
+mv kops-linux-amd64 /usr/local/bin/kops
+
+4. Kubectl Installation:
+#Reference URL: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+mv ./kubectl /usr/local/bin/kubectl
+
+5. Kops uses an id_rsa.pub file to be used for the created instances which i have used as below:
+cp /home/ubuntu/.ssh/authorized_keys /root/.ssh/id_rsa.pub
+
+
+kops create cluster --node-count 3 --name=domain.com --zones us-east-1a,us-east-1b,us-east-1c \
+    --master-zones us-east-1a,us-east-1b,us-east-1c \
+    --state s3://domain.com \
+    --dns-zone=Z1A3BXE5N40766 \
+    --dns public \
+    --node-size t2.micro \
+    --master-size t2.micro \
+    --topology public \
+    --networking weave \
+    --vpc=vpc-fc505c84 
+	
+	
+	
+	
+#Reference URL: https://github.com/kubernetes/kops/blob/master/docs/addons.md
+
+----------------------------
+#Dashboard Installation:
+----------------------------
+kubectl create -f https://raw.githubusercontent.com/kubernetes/kops/master/addons/kubernetes-dashboard/v1.7.1.yaml
+
+The login credentials are:
+
+    Username: admin
+    Password: get by running "kops get secrets kube --type secret -oplaintext" or "kubectl config view --minify"
+	
+The Dashboard URL pattern is like below:
+
+https://api.$domain/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/#!/namespace?namespace=_all
+
+As In our case:
+
+https://api.domain.com/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/#!/namespace?namespace=_all
+
+
+#Specifying the subnets to be used as below with the 'kops edit cluster' command:
+
+--------------------------------
+  subnets:
+  - cidr: 10.0.128.0/19
+    id: subnet-e07612bd			# Use this to specify the subnets if they are already created.
+    name: us-east-1a
+    type: Public
+    zone: us-east-1a
+  - cidr: 10.0.160.0/19
+    id: subnet-b52870d1			# Use this to specify the subnets if they are already created.
+    name: us-east-1b
+    type: Public
+    zone: us-east-1b
+  - cidr: 10.0.192.0/19 
+    id: subnet-6eaaca41			# Use this to specify the subnets if they are already created.
+    name: us-east-1c
+    type: Public
+    zone: us-east-1c
+---------------------------------
+
+#Specifying the root volume size for the instances as below:  
+--------------------------------------------------------------
+	spec:
+  machineType: t2.medium
+  maxSize: 2
+  minSize: 2
+  role: Node
+  rootVolumeSize: 100
+  rootVolumeType: gp2
+----------------------------------------------------
+
+## Sample Application:
+#Reference URL: https://github.com/microservices-demo/microservices-demo/tree/master/deploy/kubernetes
+
+#To Install the application:
+
+kubectl create namespace sock-shop
+kubectl apply -n sock-shop -f "https://github.com/microservices-demo/microservices-demo/blob/master/deploy/kubernetes/complete-demo.yaml?raw=true"
+
+#Open the worker node IP with port 30001 on browser. 
+#Note, we need to open the port in node security group.
