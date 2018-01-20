@@ -1,4 +1,4 @@
-Youtube Link: https://www.youtube.com/channel/UCOiI7C79ZBU-o6JZg1e0kfw/featured
+Youtube Link: https://www.youtube.com/watch?v=lxpPLc6BLhQ&index=1&list=PLRC3Vw_6PcYh7srnL2CTTkHTbCDDDgDtz
 
 1. Kubernetes Cluster Installation
 
